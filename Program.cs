@@ -1,9 +1,13 @@
-﻿using System.Runtime.CompilerServices;
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 
 public class Program
 {
     private static string[] operators = { "+", "-", "*", "/", "^", "(", ")", "root", "sin", "cos", "tan" };
+    private static string[] twoOperandOperators = { "+", "-", "*", "/", "^" };
     public static void Main(string[] args)
     {
         Console.WriteLine("console calculator - kastellecastle");
@@ -20,7 +24,7 @@ public class Program
                 }
                 else if (checkExpression(split)) 
                 {
-                    solveExpression(split);
+                    Console.WriteLine(solveExpression(split));
                 }
             }
         }
@@ -114,7 +118,6 @@ public class Program
                         if (line[end] == '.' && !hasUsedPoint) 
                         {
                             hasUsedPoint = true;
-                            Console.WriteLine("point used");
                             end += 1;
                             continue;
                         }
@@ -133,8 +136,6 @@ public class Program
             result.Add(sub);
             start = end;
         }
-
-        printExpression(result);
         return result;
     }
 
@@ -152,20 +153,141 @@ public class Program
         Console.WriteLine("");
     }
 
+    private static List<string> subExpression(List<string> expression, int start, int end) 
+    {
+        List<string> result = new List<string>();
+        for (int i = start; i <= end; i++) 
+        {
+            result.Add(expression[i]);
+        }
+        return result;
+    }
+
     private static double solveExpression(List<string> split)
     {
-        Console.WriteLine("answer");
-
+        printExpression(split);
         // FIRST: BRACKETS
         // SOLVE EXPRESSION IS RECURSIVELY CALLED ON THE EXPRESSION WITHIN BRACKETS
 
+        while (split.Contains("(")) 
+        {
+            int lBracket = 0;
+            int rBracket = split.Count - 1;
+            int layer = 0;
+
+            for (int i = 0; i < split.Count; i++) 
+            {
+                if (split[i] == "(") 
+                {
+                    if (layer == 0)
+                    {
+                        lBracket = i;
+                    }
+                    layer += 1;
+                }
+
+                if (split[i] == ")")
+                {
+                    rBracket = i;
+                    layer -= 1;
+                    if (layer == 0) 
+                    {
+                        break;
+                    }
+                }
+            }
+
+            List<string> inBrackets = subExpression(split, lBracket + 1, rBracket - 1);
+            split[lBracket] = solveExpression(inBrackets).ToString();
+
+            split.RemoveRange(lBracket + 1, rBracket - lBracket);
+        }
+
         // SECOND: POWERS
         // DOES MATH.POW
+        for (int i = 0; i < split.Count; i++) 
+        {
+            if (split[i] == "^") 
+            {
+                twoOperandExpression(split, i);
+                i -= 1;
+            }
+        }
 
         // THIRD: MULTIPLICATION/DIVISION
+        for (int i = 0; i < split.Count; i++)
+        {
+            if (split[i] == "/" || split[i] == "*")
+            {
+                twoOperandExpression(split, i);
+                i -= 1;
+            }
+        }
+
 
         // FOURTH: ADDITION/SUBTRACTION
+        for (int i = 0; i < split.Count; i++)
+        {
+            if (split[i] == "+" || split[i] == "-")
+            {
+                twoOperandExpression(split, i);
+                i -= 1;
+            }
+        }
+
+        if (split.Count == 1) 
+        {
+            return double.Parse(split[0]);
+        }
 
         return 0;
+    }
+
+    private static void twoOperandExpression(List<string> expression, int operatorIndex) 
+    {
+        if (operatorIndex == 0)
+        {
+            expression.Insert(0, "0");
+            operatorIndex += 1;
+        }
+        if (operatorIndex == expression.Count - 1)
+        {
+            expression.Add("0");
+        }
+
+        double a;
+        double b;
+
+        if (double.TryParse(expression[operatorIndex - 1], out a) && double.TryParse(expression[operatorIndex + 1], out b))
+        {
+            string operatorStr = expression[operatorIndex];
+            if (operatorStr == "+") 
+            {
+                Console.WriteLine("added " + a + " and " + b);
+                expression[operatorIndex - 1] = (a + b).ToString();
+            }
+            if (operatorStr == "-")
+            {
+                Console.WriteLine("subtracted " + b + " from " + a);
+                expression[operatorIndex - 1] = (a - b).ToString();
+            }
+            if (operatorStr == "*")
+            {
+                Console.WriteLine("multiplied " + a + " by " + b);
+                expression[operatorIndex - 1] = (a * b).ToString();
+            }
+            if (operatorStr == "/")
+            {
+                Console.WriteLine("divided " + a + " by " + b);
+                expression[operatorIndex - 1] = (a / b).ToString();
+            }
+            if (operatorStr == "^")
+            {
+                Console.WriteLine("powered " + a + " to the " + b);
+                expression[operatorIndex - 1] = (Math.Pow(a, b)).ToString();
+            }
+
+            expression.RemoveRange(operatorIndex, 2);
+        }
     }
 }
