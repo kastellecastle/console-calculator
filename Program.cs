@@ -8,6 +8,10 @@ public class Program
 {
     private static string[] operators = { "+", "-", "*", "/", "^", "(", ")", "root", "sin", "cos", "tan" };
     private static string[] twoOperandOperators = { "+", "-", "*", "/", "^" };
+
+    private static bool showSteps = true;
+    private static bool debug = false;
+
     public static void Main(string[] args)
     {
         Console.WriteLine("console calculator - kastellecastle");
@@ -72,6 +76,41 @@ public class Program
             Console.WriteLine("invalid brackets");
             check = false;
         }
+
+        string lastComponent = "";
+        foreach (string s in expression)
+        {
+            if (s == "(" || s == ")") 
+            {
+                lastComponent = s;
+                continue;
+            }
+
+            if (operators.Contains(s))
+            {
+                if (lastComponent == "operator" || lastComponent == "(") 
+                {
+                    Console.WriteLine("invalid syntax: operator into operator " + s);
+                    check = false;
+                    break;
+                }
+                lastComponent = "operator";
+                continue;
+            }
+
+            if (double.TryParse(s, out z))
+            {
+                if (lastComponent == "number")
+                {
+                    Console.WriteLine("invalid syntax: number into number");
+                    check = false;
+                    break;
+                }
+                lastComponent = "number";
+                continue;
+            }
+        }
+
 
         return check;
     }
@@ -165,7 +204,10 @@ public class Program
 
     private static double solveExpression(List<string> split)
     {
-        printExpression(split);
+        if (debug)
+        {
+            printExpression(split);
+        }
         // FIRST: BRACKETS
         // SOLVE EXPRESSION IS RECURSIVELY CALLED ON THE EXPRESSION WITHIN BRACKETS
 
@@ -201,6 +243,23 @@ public class Program
             split[lBracket] = solveExpression(inBrackets).ToString();
 
             split.RemoveRange(lBracket + 1, rBracket - lBracket);
+
+            if (lBracket != 0) 
+            {
+                if (split.Count > 1 && !operators.Contains(split[lBracket - 1]))
+                {
+                    split.Insert(lBracket, "*");
+                    lBracket++;
+                }
+            }
+
+            if (lBracket != split.Count - 1)
+            {
+                if (!operators.Contains(split[lBracket + 1]))
+                {
+                    split.Insert(lBracket + 1, "*");
+                }
+            }
         }
 
         // SECOND: POWERS
@@ -263,28 +322,28 @@ public class Program
             string operatorStr = expression[operatorIndex];
             if (operatorStr == "+") 
             {
-                Console.WriteLine("added " + a + " and " + b);
                 expression[operatorIndex - 1] = (a + b).ToString();
             }
             if (operatorStr == "-")
             {
-                Console.WriteLine("subtracted " + b + " from " + a);
                 expression[operatorIndex - 1] = (a - b).ToString();
             }
             if (operatorStr == "*")
             {
-                Console.WriteLine("multiplied " + a + " by " + b);
                 expression[operatorIndex - 1] = (a * b).ToString();
             }
             if (operatorStr == "/")
             {
-                Console.WriteLine("divided " + a + " by " + b);
                 expression[operatorIndex - 1] = (a / b).ToString();
             }
             if (operatorStr == "^")
             {
-                Console.WriteLine("powered " + a + " to the " + b);
                 expression[operatorIndex - 1] = (Math.Pow(a, b)).ToString();
+            }
+
+            if (showSteps)
+            {
+                Console.WriteLine(a + " " + operatorStr + " " + b + " = " + expression[operatorIndex - 1]);
             }
 
             expression.RemoveRange(operatorIndex, 2);
