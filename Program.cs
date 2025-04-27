@@ -7,10 +7,14 @@ using System.Runtime.InteropServices;
 public class Program
 {
     private static string[] operators = { "+", "-", "*", "/", "^", "(", ")", "root", "sin", "cos", "tan" };
+    private static string[] functions = { "root", "sin", "cos", "tan" };
     private static string[] twoOperandOperators = { "+", "-", "*", "/", "^" };
+    private static string[] oneArgFunctions = { "root", "sin", "cos", "tan", "ln" };
+
+    private static bool useRadians = false;
 
     private static bool showSteps = true;
-    private static bool debug = false;
+    private static bool debug = true;
 
     public static void Main(string[] args)
     {
@@ -36,6 +40,34 @@ public class Program
 
     private static void executeConfigExpression(List<string> expression)
     {
+        if (expression.Count < 2) 
+        {
+            return;
+        }
+
+        // ONE COMPONENT COMMANDS GO HERE
+
+        if (expression[1] == "use") 
+        {
+            if (expression[2] == "help")
+            {
+                Console.WriteLine("selects the metric to be used for angles. syntax:");
+                Console.WriteLine("use radians || use degrees");
+            }
+            else if (expression[2] == "radians")
+            {
+                useRadians = true;
+            }
+            else if (expression[2] == "degrees")
+            {
+                useRadians = false;
+            }
+            else 
+            {
+                Console.WriteLine("unrecognised argument: " + expression[2]);
+            }
+        }
+
         return;
     }
 
@@ -88,24 +120,25 @@ public class Program
 
             if (operators.Contains(s))
             {
+                /*
                 if (lastComponent == "operator" || lastComponent == "(") 
                 {
                     Console.WriteLine("invalid syntax: operator into operator " + s);
                     check = false;
                     break;
-                }
+                }*/
                 lastComponent = "operator";
                 continue;
             }
 
             if (double.TryParse(s, out z))
             {
-                if (lastComponent == "number")
+                /*if (lastComponent == "number")
                 {
                     Console.WriteLine("invalid syntax: number into number");
                     check = false;
                     break;
-                }
+                }*/
                 lastComponent = "number";
                 continue;
             }
@@ -131,7 +164,6 @@ public class Program
             end = start + 1;
 
             // HANDLES ALL ONE-SYMBOL OPERATORS
-            // PLUS OR MINUS CAN BE NUMBER PREFIXES, AND SO ARE EXCLUDED HERE
             if (operators.Contains(line[start].ToString()))
             {
                 string sub2 = line.Substring(start, end - start);
@@ -262,6 +294,15 @@ public class Program
             }
         }
 
+        for (int i = split.Count - 1; i >= 0; i--)
+        {
+            if (functions.Contains(split[i]))
+            {
+                doFunction(split, i);
+                i = split.Count - 1;
+            }
+        }
+
         // SECOND: POWERS
         // DOES MATH.POW
         for (int i = 0; i < split.Count; i++) 
@@ -289,8 +330,20 @@ public class Program
         {
             if (split[i] == "+" || split[i] == "-")
             {
-                twoOperandExpression(split, i);
-                i -= 1;
+                if (i == 0)
+                {
+                    if (split[i] == "-")
+                    {
+                        split[1] = "-" + split[1];
+                    }
+                    split.RemoveAt(0);
+                    i -= 1;
+                }
+                else
+                {
+                    twoOperandExpression(split, i);
+                    i -= 1;
+                }
             }
         }
 
@@ -348,5 +401,79 @@ public class Program
 
             expression.RemoveRange(operatorIndex, 2);
         }
+    }
+
+    private static void doFunction(List<string> expression, int funcIndex)
+    {
+        if (funcIndex == expression.Count - 1)
+        {
+            expression.Add("0");
+        }
+
+        if (oneArgFunctions.Contains(expression[funcIndex])) { doOneArgFunction(expression, funcIndex); }
+
+    }
+
+    private static void doOneArgFunction(List<string> expression, int funcIndex) 
+    {
+        int argStart = funcIndex + 1;
+        string func = expression[funcIndex];
+
+        if (expression[funcIndex + 1] == "^")
+        {
+            argStart += 2;
+        }
+
+        double arg;
+        double result = 0;
+
+        if (double.TryParse(expression[argStart], out arg)) 
+        {
+            if (func == "root") 
+            {
+                result = Math.Sqrt(arg);
+            }
+            if (func == "sin")
+            {
+                if (!useRadians) 
+                {
+                    arg = toRadians(arg);
+                }
+                result = Math.Sin(arg);
+            }
+            if (func == "cos")
+            {
+                if (!useRadians)
+                {
+                    arg = toRadians(arg);
+                }
+                result = Math.Cos(arg);
+            }
+            if (func == "tan")
+            {
+                if (!useRadians)
+                {
+                    arg = toRadians(arg);
+                }
+                result = Math.Tan(arg);
+            }
+            if (func == "ln")
+            {
+                result = Math.Log(arg);
+            }
+        }
+
+        if (showSteps) 
+        {
+            Console.WriteLine(func + " " + arg + " = " + result);
+        }
+
+        expression[funcIndex] = result.ToString();
+        expression.RemoveAt(argStart);
+    }
+
+    private static double toRadians(double num) 
+    {
+        return num * Math.PI / 180;
     }
 }
