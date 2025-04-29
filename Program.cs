@@ -7,14 +7,15 @@ using System.Runtime.InteropServices;
 public class Program
 {
     private static string[] operators = { "+", "-", "*", "/", "^", "(", ")", "root", "sin", "cos", "tan" };
-    private static string[] functions = { "root", "sin", "cos", "tan" };
+    private static string[] functions = { "root", "sin", "cos", "tan", "ln" };
     private static string[] twoOperandOperators = { "+", "-", "*", "/", "^" };
     private static string[] oneArgFunctions = { "root", "sin", "cos", "tan", "ln" };
+    private static string[] constants = { "pi", "e" };
 
     private static bool useRadians = false;
 
-    private static bool showSteps = true;
-    private static bool debug = true;
+    private static bool showSteps = false;
+    private static bool debug = false;
 
     public static void Main(string[] args)
     {
@@ -74,6 +75,7 @@ public class Program
     private static bool checkExpression(List<string> expression)
     {
         bool check = true;
+        /*
         double z;
 
         // CHECKS FOR INVALID PARTS OF THE EXPRESSION
@@ -120,31 +122,32 @@ public class Program
 
             if (operators.Contains(s))
             {
-                /*
+                
                 if (lastComponent == "operator" || lastComponent == "(") 
                 {
                     Console.WriteLine("invalid syntax: operator into operator " + s);
                     check = false;
                     break;
-                }*/
+                }
                 lastComponent = "operator";
                 continue;
             }
 
             if (double.TryParse(s, out z))
             {
-                /*if (lastComponent == "number")
+                if (lastComponent == "number")
                 {
                     Console.WriteLine("invalid syntax: number into number");
                     check = false;
                     break;
-                }*/
+                }
                 lastComponent = "number";
                 continue;
             }
         }
 
 
+        */
         return check;
     }
 
@@ -278,7 +281,7 @@ public class Program
 
             if (lBracket != 0) 
             {
-                if (split.Count > 1 && !operators.Contains(split[lBracket - 1]))
+                if (split.Count > 1 && (!operators.Contains(split[lBracket - 1]) && !functions.Contains(split[lBracket - 1])))
                 {
                     split.Insert(lBracket, "*");
                     lBracket++;
@@ -292,6 +295,26 @@ public class Program
                     split.Insert(lBracket + 1, "*");
                 }
             }
+
+            printExpression(split);
+        }
+
+        // SECOND: CONSTANTS
+        // REPLACES CONSTANTS WITH THEIR ACTUAL VALUES
+        for (int i = 0; i < split.Count; i++)
+        {
+            if (constants.Contains(split[i]))
+            {
+                if (split[i] == "pi")
+                {
+                    split[i] = Math.PI.ToString();
+                }
+
+                if (split[i] == "e")
+                {
+                    split[i] = Math.E.ToString();
+                }
+            }
         }
 
         for (int i = split.Count - 1; i >= 0; i--)
@@ -303,7 +326,7 @@ public class Program
             }
         }
 
-        // SECOND: POWERS
+        // THIRD: POWERS
         // DOES MATH.POW
         for (int i = 0; i < split.Count; i++) 
         {
@@ -459,6 +482,7 @@ public class Program
             }
             if (func == "ln")
             {
+                Console.WriteLine("logged " + arg);
                 result = Math.Log(arg);
             }
         }
