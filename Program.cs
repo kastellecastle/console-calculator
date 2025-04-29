@@ -7,14 +7,17 @@ using System.Runtime.InteropServices;
 public class Program
 {
     private static string[] operators = { "+", "-", "*", "/", "^", "(", ")", "root", "sin", "cos", "tan" };
-    private static string[] functions = { "root", "sin", "cos", "tan", "ln" };
+    private static string[] functions = { "root", "sin", "cos", "tan", "ln", "arcsin", "arccos", "arctan" };
     private static string[] twoOperandOperators = { "+", "-", "*", "/", "^" };
-    private static string[] oneArgFunctions = { "root", "sin", "cos", "tan", "ln" };
-    private static string[] constants = { "pi", "e" };
+    private static string[] oneArgFunctions = { "root", "sin", "cos", "tan", "ln", "arcsin", "arccos", "arctan" };
+    private static string[] constants = { "pi", "e", "ans" };
+
+    private static double ans = 0;
+    private static Dictionary<string, double> variables = new Dictionary<string, double>();
 
     private static bool useRadians = false;
 
-    private static bool showSteps = false;
+    private static bool showSteps = true;
     private static bool debug = false;
 
     public static void Main(string[] args)
@@ -23,23 +26,29 @@ public class Program
         while (true) 
         {
             string? line = Console.ReadLine();
-            if (line != null) 
+            if (line != null && line != "") 
             {
                 List<string> split = splitExpression(line);
+                string type = getExpressionType(split);
 
-                if (split[0] == "config") 
+                if (type == "config") 
                 {
-                    executeConfigExpression(split);
+                    doConfigExpression(split);
                 }
-                else if (checkExpression(split)) 
+                else if (type == "solve") 
                 {
-                    Console.WriteLine(solveExpression(split));
+                    ans = solveExpression(split);
+                    Console.WriteLine(ans);
+                }
+                else if (type == "assign")
+                {
+                    doAssignExpression(split);
                 }
             }
         }
     }
 
-    private static void executeConfigExpression(List<string> expression)
+    private static void doConfigExpression(List<string> expression)
     {
         if (expression.Count < 2) 
         {
@@ -70,6 +79,40 @@ public class Program
         }
 
         return;
+    }
+
+    private static void doAssignExpression(List<string> expression)
+    {
+        if (expression.Count < 3) 
+        {
+            return;
+        }
+
+        if (constants.Contains(expression[0]))
+        {
+            Console.WriteLine("cannot assign value to " + expression[0] + " because it is already a constant");
+            return;
+        }
+
+        if (functions.Contains(expression[0]))
+        {
+            Console.WriteLine("cannot assign value to " + expression[0] + " because it is already a function");
+            return;
+        }
+
+        if (functions.Contains(expression[0]))
+        {
+            Console.WriteLine("cannot assign value to " + expression[0] + " because it is already an operator");
+            return;
+        }
+
+        string variable = expression[0];
+        double value = 0;
+
+        expression.RemoveRange(0, 2);
+        value = solveExpression(expression);
+
+        variables[variable] = value;
     }
 
     private static bool checkExpression(List<string> expression)
@@ -149,6 +192,21 @@ public class Program
 
         */
         return check;
+    }
+
+    private static string getExpressionType(List<string> expression) 
+    {
+        if (expression[0] == "config") 
+        {
+            return "config";
+        }
+
+        if (expression.Count > 1 && expression[1] == "=")
+        {
+            return "assign";
+        }
+
+        return "solve";
     }
 
     private static List<string> splitExpression(string line) 
@@ -314,6 +372,15 @@ public class Program
                 {
                     split[i] = Math.E.ToString();
                 }
+
+                if (split[i] == "ans")
+                {
+                    split[i] = ans.ToString();
+                }
+            }
+            if (variables.ContainsKey(split[i]))
+            {
+                split[i] = variables[split[i]].ToString();
             }
         }
 
@@ -368,6 +435,11 @@ public class Program
                     i -= 1;
                 }
             }
+        }
+
+        if (variables.ContainsKey(split[0])) 
+        {
+            split[0] = variables[split[0]].ToString();
         }
 
         if (split.Count == 1) 
@@ -480,6 +552,30 @@ public class Program
                 }
                 result = Math.Tan(arg);
             }
+            if (func == "arcsin")
+            {
+                result = Math.Asin(arg);
+                if (!useRadians)
+                {
+                    result = toDegrees(result);
+                }
+            }
+            if (func == "arccos")
+            {
+                result = Math.Acos(arg);
+                if (!useRadians)
+                {
+                    result = toDegrees(result);
+                }
+            }
+            if (func == "arctan")
+            {
+                result = Math.Atan(arg);
+                if (!useRadians)
+                {
+                    result = toDegrees(result);
+                }
+            }
             if (func == "ln")
             {
                 Console.WriteLine("logged " + arg);
@@ -499,5 +595,10 @@ public class Program
     private static double toRadians(double num) 
     {
         return num * Math.PI / 180;
+    }
+
+    private static double toDegrees(double num)
+    {
+        return num / Math.PI * 180;
     }
 }
