@@ -7,9 +7,10 @@ using System.Runtime.InteropServices;
 public class Program
 {
     private static string[] operators = { "+", "-", "*", "/", "^", "(", ")", "root", "sin", "cos", "tan" };
-    private static string[] functions = { "root", "sin", "cos", "tan", "ln", "arcsin", "arccos", "arctan" };
+    private static string[] functions = { "root", "sin", "cos", "tan", "ln", "arcsin", "arccos", "arctan", "log" };
     private static string[] twoOperandOperators = { "+", "-", "*", "/", "^" };
     private static string[] oneArgFunctions = { "root", "sin", "cos", "tan", "ln", "arcsin", "arccos", "arctan" };
+    private static string[] twoArgFunctions = { "log" };
     private static string[] constants = { "pi", "e", "ans" };
 
     private static double ans = 0;
@@ -17,7 +18,7 @@ public class Program
 
     private static bool useRadians = false;
 
-    private static bool showSteps = true;
+    private static bool showSteps = false;
     private static bool debug = false;
 
     public static void Main(string[] args)
@@ -506,6 +507,7 @@ public class Program
         }
 
         if (oneArgFunctions.Contains(expression[funcIndex])) { doOneArgFunction(expression, funcIndex); }
+        if (twoArgFunctions.Contains(expression[funcIndex])) { doTwoArgFunction(expression, funcIndex); }
 
     }
 
@@ -590,6 +592,37 @@ public class Program
 
         expression[funcIndex] = result.ToString();
         expression.RemoveAt(argStart);
+    }
+
+    private static void doTwoArgFunction(List<string> expression, int funcIndex)
+    {
+        int argStart = funcIndex + 1;
+        string func = expression[funcIndex];
+
+        if (expression[funcIndex + 1] == "^")
+        {
+            argStart += 2;
+        }
+
+        double arg = 0;
+        double arg2 = 0;
+        double result = 0;
+
+        if (double.TryParse(expression[argStart], out arg) && double.TryParse(expression[argStart + 1], out arg2))
+        {
+            if (func == "log")
+            {
+                result = Math.Log(arg2, arg);
+            }
+        }
+
+        if (showSteps)
+        {
+            Console.WriteLine(func + " " + arg + " " + arg2 + " = " + result);
+        }
+
+        expression[funcIndex] = result.ToString();
+        expression.RemoveRange(argStart, 2);
     }
 
     private static double toRadians(double num) 
