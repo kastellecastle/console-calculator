@@ -101,7 +101,7 @@ public class Program
             return;
         }
 
-        if (functions.Contains(expression[0]))
+        if (operators.Contains(expression[0]))
         {
             Console.WriteLine("cannot assign value to " + expression[0] + " because it is already an operator");
             return;
@@ -208,6 +208,35 @@ public class Program
         }
 
         return "solve";
+    }
+
+    private static string evalExpression(List<string> expression)
+    {
+        string result = "";
+        double x;
+        for (int i = 0; i < expression.Count; i++) 
+        {
+            if (double.TryParse(expression[i], out x) || constants.Contains(expression[i])) 
+            {
+                result += "(num) ";
+            }
+
+            if (operators.Contains(expression[i]))
+            {
+                result += expression[i] + " ";
+            }
+
+            if (oneArgFunctions.Contains(expression[i]))
+            {
+                result += "(func1) ";
+            }
+            if (twoArgFunctions.Contains(expression[i]))
+            {
+                result += "(func2) ";
+            }
+        }
+
+        return result;
     }
 
     private static List<string> splitExpression(string line) 
@@ -338,9 +367,12 @@ public class Program
 
             split.RemoveRange(lBracket + 1, rBracket - lBracket);
 
-            if (lBracket != 0) 
+            // MULTIPLICATION OPERATOR IS ADDED IF:
+            // PREVIOUS OR NEXT 
+
+            /*if (lBracket != 0) 
             {
-                if (split.Count > 1 && (!operators.Contains(split[lBracket - 1]) && !functions.Contains(split[lBracket - 1])))
+                if (split.Count > 1 && !operators.Contains(split[lBracket - 1]) && !oneArgFunctions.Contains(split[lBracket - 1]) && !twoArgFunctions.Contains(split[lBracket - 2]))
                 {
                     split.Insert(lBracket, "*");
                     lBracket++;
@@ -353,13 +385,11 @@ public class Program
                 {
                     split.Insert(lBracket + 1, "*");
                 }
-            }
+            }*/
 
             printExpression(split);
         }
 
-        // SECOND: CONSTANTS
-        // REPLACES CONSTANTS WITH THEIR ACTUAL VALUES
         for (int i = 0; i < split.Count; i++)
         {
             if (constants.Contains(split[i]))
@@ -383,6 +413,55 @@ public class Program
             {
                 split[i] = variables[split[i]].ToString();
             }
+        }
+
+        string lastStrType = "nothing";
+        int inFunctionDepth = 0;
+        for (int i = 0; i < split.Count; i++) 
+        {
+            string thisStrType = "";
+            inFunctionDepth = Math.Max(inFunctionDepth - 1, 0);
+            double x;
+            if (double.TryParse(split[i], out x)) 
+            {
+                thisStrType = "num";
+                if (lastStrType == "num" && inFunctionDepth == 0)
+                {
+                    split.Insert(i, "*");
+                    printExpression(split);
+                    Console.WriteLine(split[i]);
+                    thisStrType = "operator";
+                }
+            }
+            else if (operators.Contains(split[i])) 
+            {
+                thisStrType = "operator";
+            }
+            else if (oneArgFunctions.Contains(split[i]))
+            {
+                thisStrType = "func1";
+                if (lastStrType == "num" && inFunctionDepth == 0)
+                {
+                    split.Insert(i, "*");
+                    printExpression(split);
+                    Console.WriteLine(split[i]);
+                    thisStrType = "operator";
+                }
+                inFunctionDepth += 2;
+            }
+            else if (twoArgFunctions.Contains(split[i]))
+            {
+                thisStrType = "func2";
+                if (lastStrType == "num" && inFunctionDepth == 0)
+                {
+                    split.Insert(i, "*");
+                    printExpression(split);
+                    Console.WriteLine(split[i]);
+                    thisStrType = "operator";
+                }
+                inFunctionDepth += 3;
+            }
+            lastStrType = thisStrType;
         }
 
         for (int i = split.Count - 1; i >= 0; i--)
@@ -448,6 +527,7 @@ public class Program
             return double.Parse(split[0]);
         }
 
+        printExpression(split);
         return 0;
     }
 
@@ -618,7 +698,7 @@ public class Program
 
         if (showSteps)
         {
-            Console.WriteLine(func + " " + arg + " " + arg2 + " = " + result);
+            Console.WriteLine(func + "" + arg + " " + arg2 + " = " + result);
         }
 
         expression[funcIndex] = result.ToString();
