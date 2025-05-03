@@ -45,7 +45,102 @@ public class Program
                 {
                     doAssignExpression(split);
                 }
+                else if (type == "polynomial")
+                {
+                    getPolynomialInfo(getPolynomialCoefficients(split));
+                }
             }
+        }
+    }
+
+    private static double[] getPolynomialCoefficients(List<string> split)
+    {
+        int coefficientNum = 0;
+        double[] coefs = new double[10];
+        for (int i = 0; i < split.Count; i++) 
+        {
+            if (split[i] == "x") 
+            {
+                double dc;
+                double value = 1;
+                int xPower = 0;
+                if (i > 0 && double.TryParse(split[i - 1], out dc)) 
+                {
+                    value *= dc;
+                    if (i > 1 && split[i - 2] == "-")
+                    {
+                        value *= -1;
+                    }
+                }
+                else if (i > 0 && split[i - 1] == "-")
+                {
+                    value *= -1;
+                }
+
+                if (i < split.Count - 1) 
+                {
+                    if (split[i + 1] == "^")
+                    {
+                        xPower = int.Parse(split[i + 2]);
+                    }
+                    else 
+                    {
+                        xPower = 1;
+                    }
+                }
+                else 
+                {
+                    xPower = 1;
+                }
+                Console.WriteLine(value);
+                coefficientNum = Math.Max(coefficientNum, xPower + 1);
+                coefs[xPower] += value;
+            }
+        }
+
+        double[] newCoefs = new double[coefficientNum];
+        for (int i = 0; i < newCoefs.Length; i++) 
+        {
+            newCoefs[i] = coefs[coefficientNum - 1 - i];
+            Console.WriteLine((coefficientNum - 1 - i) + ": " + newCoefs[i]);
+        }
+        coefs = newCoefs;
+
+        return coefs;
+    }
+
+    private static void getPolynomialInfo(double[] coefficients)
+    {
+        for (int i = 0; i < coefficients.Length; i++) 
+        {
+            Console.WriteLine(coefficients[i]);
+        }
+
+        if (coefficients.Length == 3) 
+        {
+            double a = coefficients[0];
+            double b = coefficients[1];
+            double c = coefficients[2];
+
+            double discriminant = Math.Pow(b, 2) - (4 * a * c);
+            Console.WriteLine("discriminant: " + discriminant);
+            if (discriminant < 0) 
+            {
+                Console.WriteLine("no real roots");
+            }
+            if (discriminant == 0)
+            {
+                double root = (-b + Math.Sqrt(discriminant)) / (2 * a);
+                Console.WriteLine("one root: " + root);
+            }
+            if (discriminant > 0)
+            {
+                double root = (-b + Math.Sqrt(discriminant)) / (2 * a);
+                double root2 = (-b - Math.Sqrt(discriminant)) / (2 * a);
+                Console.WriteLine("one root: " + root + ", " + root2);
+            }
+
+            Console.WriteLine("y intercept: " +  coefficients[coefficients.Length - 1]);
         }
     }
 
@@ -205,6 +300,11 @@ public class Program
         if (expression.Count > 1 && expression[1] == "=")
         {
             return "assign";
+        }
+
+        if (expression.Count > 0 && expression[0] == "polynomial")
+        {
+            return "polynomial";
         }
 
         return "solve";
