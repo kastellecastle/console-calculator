@@ -49,8 +49,29 @@ public class Program
                 {
                     getPolynomialInfo(getPolynomialCoefficients(split));
                 }
+                else if (type == "vector")
+                {
+                    getVectorInfo(getVectorCoefficients(split));
+                }
             }
         }
+    }
+
+    private static void getVectorInfo(double[] coefs) 
+    {
+        double x = coefs[0];
+        double y = coefs[1];
+
+        Console.WriteLine(x + ", " + y);
+
+        double magnitude = Math.Sqrt(Math.Pow(x, 2) + Math.Pow(y, 2));
+
+        Console.WriteLine("magnitude: " + magnitude);
+
+        double unitX = x / magnitude;
+        double unitY = y / magnitude;
+
+        Console.WriteLine("bearing: " + Math.Asin(unitY) + ", " + Math.Acos(unitX));
     }
 
     private static double[] getPolynomialCoefficients(List<string> split)
@@ -99,6 +120,47 @@ public class Program
         }
         coefs = newCoefs;
 
+        return coefs;
+    }
+
+    private static double[] getVectorCoefficients(List<string> split)
+    {
+        double i = 0;
+        double j = 0;
+
+        for (int k = 1; k < split.Count; k++)
+        {
+            Console.WriteLine(split[k]);
+            double value = 1;
+            if (split[k] == "+")
+            {
+                k += 1;
+            }
+            if (split[k] == "-")
+            {
+                value *= -1;
+                k += 1;
+            }
+
+            double v;
+            if (double.TryParse(split[k], out v))
+            {
+                value *= v;
+                k += 1;
+            }
+
+            if (split[k] == "i") 
+            {
+                i += value;
+            }
+
+            if (split[k] == "j")
+            {
+                j += value;
+            }
+        }
+
+        double[] coefs = [i, j];
         return coefs;
     }
 
@@ -298,6 +360,11 @@ public class Program
         if (expression.Count > 0 && expression[0] == "polynomial")
         {
             return "polynomial";
+        }
+
+        if (expression.Count > 0 && expression[0] == "vector")
+        {
+            return "vector";
         }
 
         return "solve";
